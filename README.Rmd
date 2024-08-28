@@ -1,12 +1,14 @@
 ---
-title: "Processing and Analysis"
-author: "Rodrigo Malagón"
-date: "2024-08-28"
-output: html_document
+output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
 ```{r}
@@ -592,7 +594,6 @@ for (quarter in 1:4){
 #}
 ```
 
-
 # References
 
 Borge, R., Lumbreras, J., Pérez, J., de la Paz, D., Vedrenne, M., de Andrés, J. M., & Rodríguez, M. E. (2014). Emission inventories and modeling requirements for the development of air quality plans. Application to Madrid (Spain). The Science of the total environment, 466-467, 809–819. <https://doi.org/10.1016/j.scitotenv.2013.07.093>
@@ -600,3 +601,4 @@ Borge, R., Lumbreras, J., Pérez, J., de la Paz, D., Vedrenne, M., de Andrés, J
 European Environment Agency. (2019). “Air quality in Europe—2019 report”. EEA Report No 10/2019.Retrieved on June 24 at <https://www.eea.europa.eu/publications/air-quality-in-europe-2019>
 
 Ortiz, C., Linares, C., Carmona, R., & Díaz, J. (2017). Evaluation of short-term mortality attributable to particulate matter pollution in Spain. Environmental pollution (Barking, Essex : 1987), 224, 541–551. <https://doi.org/10.1016/j.envpol.2017.02.037>
+
