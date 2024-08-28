@@ -32,6 +32,8 @@ library(zyp)   # used to perform time series analysis
 
 Author: Rodrigo Malagón Rodríguez
 
+This project aims to demonstrate some useful techniques of data processing and analysis to derive trends at quarter level of neighborhoods of a city out of individual sensor data spread throughout the city. The most important tools used include interpolation, vectorial datacube aggregation, and trend time series analysis.
+
 # I. Introduction
 
 Madrid suffers from high trends of pollution due to the strong use of cars and narrow crowded streets. Road traffic can drive as much as 90% of NO2 concentration in the centre of the city (Borge et al., 2014). Similar is the case of PM2.5, mainly caused by heavy car use in the city (Ortiz et al., 2017). Moreover, in previous years, $NO_2$ concentrations in the city surpassed the annual limit of 40 $\mu g/ m^3$, set by the EU (EEA, 2019).

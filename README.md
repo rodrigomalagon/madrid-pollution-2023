@@ -32,6 +32,12 @@ library(zyp)   # used to perform time series analysis
 
 Author: Rodrigo Malagón Rodríguez
 
+This project aims to demonstrate some useful techniques of data
+processing and analysis to derive trends at quarter level of
+neighborhoods of a city out of individual sensor data spread throughout
+the city. The most important tools used include interpolation, vectorial
+datacube aggregation, and trend time series analysis.
+
 # I. Introduction
 
 Madrid suffers from high trends of pollution due to the strong use of
