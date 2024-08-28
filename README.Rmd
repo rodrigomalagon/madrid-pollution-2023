@@ -47,7 +47,6 @@ In this section we process our main datasets from [Madrid Open Data portal](http
 ## II.1 Madrid pollution data processing
 
 We begin with a custom arrangement of our data files:
-
 ```{r}
 data_path <- "./rawdata/Year2023/"
 file_paths <- list.files(data_path, full.names = TRUE, pattern = "*.csv")
@@ -160,6 +159,16 @@ Though no `NULL` values were found in the dataset, it seems that **most pollutan
 
 For simplicity and leveraging the most complete dataset, we will do our analysis with the $NO_2$. We thus inspect in more detail data from this pollutant. We should have, by station-month combination, a total of measurements equal to the `number of days of that month` $\times\ 24$ `hours of the day`. We know, by the wide structure of our initial dataset, that missing hours will not be the case, so we perform the inspection at the "day level" (division by $24$):
 
+
+```{r}
+#Extract NO2 pollution data
+no2_madrid <- year_data[year_data$pollutant_name=='NO2',]
+#Extracting day of the year
+no2_madrid$date <- as.Date(paste0('2023-',no2_madrid$month,'-',no2_madrid$day))
+#Week of the year extraction
+no2_madrid$week_num <- no2_madrid$date|>lubridate::isoweek()
+```
+
 ```{r}
 
 #Compute a list of desired values per month (i.e. january = 31, february = 28, etc.)
@@ -184,15 +193,6 @@ no2_count_summary
 
 Inspecting this summary dataframe, we conclude that most stations possess complete $NO_2$ records per month and, most important, missing dates spatially concentrate in few stations. Therefore, we can get proxy readings for those locations by interpolation later on. We continue our workflow focusing on this pollutant.
 
-
-```{r}
-#Extract NO2 pollution data
-no2_madrid <- year_data[year_data$pollutant_name=='NO2',]
-#Extracting day of the year
-no2_madrid$date <- as.Date(paste0('2023-',no2_madrid$month,'-',no2_madrid$day))
-#Week of the year extraction
-no2_madrid$week_num <- no2_madrid$date|>lubridate::isoweek()
-```
 
 
 ## II.2 Integration of stations locations
