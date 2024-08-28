@@ -366,8 +366,8 @@ colnames(no2_mad_year)[2]<-'mean'
 
 
 #Export to shapefile
-#no2_mad_year |> sf::st_collection_extract(type="POLYGON")|>
- # st_write('./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp')
+no2_mad_year |> sf::st_collection_extract(type="POLYGON")|>
+ st_write('./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp')
 
 # Save and show
 save(no2_mad_year, file = 'processed_data/no2_mad_year.rda')
@@ -384,10 +384,10 @@ most_polluted <- no2_mad_year[order(no2_mad_year$mean,decreasing = TRUE),][1:n,c
 (most_polluted$name)
 
 
-#most_polluted |> st_union() |> st_buffer(1) -> export
 #Write shapefile
-#file_name <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
-#st_write(export,file_name)
+most_polluted |> st_union() |> st_buffer(1) -> export
+file_name <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
+st_write(export,file_name)
 ```
 
 ```{r}
@@ -495,7 +495,6 @@ apply_mk <- function(cube,period){
 Plot general evolution of NO2
 ```{r}
 df <- data.frame(no2_neigh_week)
-#df <- aggregate(mean.NO2.concentration~week,df,mean)
 #jpg(filename="./exported_data/plot.jpg")
 plot(df$week,df$mean.NO2.concentration,main = 'NO2 Concentration',xlab = 'week',ylab='Concentration [μg/m^3]')
 #dev.off()
@@ -584,12 +583,11 @@ for (quarter in 1:4){
   q_results[[quarter]] <-  q_results[[quarter]] |> sf::st_collection_extract(type="POLYGON") 
 }
 
-
-#for (quarter in 1:4){
-  #writing shps
- # file_name <- paste0("exported_data/shapefiles/trend_classification_q_",quarter,".shp")
-  #sf::st_write(q_results[[quarter]],file_name)
-#}
+# Export as shapefiles
+for (quarter in 1:4){
+ file_name <- paste0("exported_data/shapefiles/trend_classification_q_",quarter,".shp")
+  sf::st_write(q_results[[quarter]],file_name)
+}
 ```
 
 
