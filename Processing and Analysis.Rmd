@@ -1,12 +1,14 @@
 ---
-title: "Processing and Analysis"
-author: "Rodrigo Malagón"
-date: "2024-08-28"
-output: html_document
+output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
 ```
 
 ```{r}
@@ -30,6 +32,8 @@ library(zyp)   # used to perform time series analysis
 
 Author: Rodrigo Malagón Rodríguez
 
+This project aims to demonstrate some useful techniques of data processing and analysis to derive trends at quarter level of neighborhoods of a city out of individual sensor data spread throughout the city. The most important tools used include interpolation, vectorial datacube aggregation, and trend time series analysis.
+
 # I. Introduction
 
 Madrid suffers from high trends of pollution due to the strong use of cars and narrow crowded streets. Road traffic can drive as much as 90% of NO2 concentration in the centre of the city (Borge et al., 2014). Similar is the case of PM2.5, mainly caused by heavy car use in the city (Ortiz et al., 2017). Moreover, in previous years, $NO_2$ concentrations in the city surpassed the annual limit of 40 $\mu g/ m^3$, set by the EU (EEA, 2019).
@@ -45,7 +49,6 @@ In this section we process our main datasets from [Madrid Open Data portal](http
 ## II.1 Madrid pollution data processing
 
 We begin with a custom arrangement of our data files:
-
 ```{r}
 data_path <- "./rawdata/Year2023/"
 file_paths <- list.files(data_path, full.names = TRUE, pattern = "*.csv")
@@ -158,6 +161,16 @@ Though no `NULL` values were found in the dataset, it seems that **most pollutan
 
 For simplicity and leveraging the most complete dataset, we will do our analysis with the $NO_2$. We thus inspect in more detail data from this pollutant. We should have, by station-month combination, a total of measurements equal to the `number of days of that month` $\times\ 24$ `hours of the day`. We know, by the wide structure of our initial dataset, that missing hours will not be the case, so we perform the inspection at the "day level" (division by $24$):
 
+
+```{r}
+#Extract NO2 pollution data
+no2_madrid <- year_data[year_data$pollutant_name=='NO2',]
+#Extracting day of the year
+no2_madrid$date <- as.Date(paste0('2023-',no2_madrid$month,'-',no2_madrid$day))
+#Week of the year extraction
+no2_madrid$week_num <- no2_madrid$date|>lubridate::isoweek()
+```
+
 ```{r}
 
 #Compute a list of desired values per month (i.e. january = 31, february = 28, etc.)
@@ -182,15 +195,6 @@ no2_count_summary
 
 Inspecting this summary dataframe, we conclude that most stations possess complete $NO_2$ records per month and, most important, missing dates spatially concentrate in few stations. Therefore, we can get proxy readings for those locations by interpolation later on. We continue our workflow focusing on this pollutant.
 
-
-```{r}
-#Extract NO2 pollution data
-no2_madrid <- year_data[year_data$pollutant_name=='NO2',]
-#Extracting day of the year
-no2_madrid$date <- as.Date(paste0('2023-',no2_madrid$month,'-',no2_madrid$day))
-#Week of the year extraction
-no2_madrid$week_num <- no2_madrid$date|>lubridate::isoweek()
-```
 
 
 ## II.2 Integration of stations locations
@@ -366,8 +370,8 @@ colnames(no2_mad_year)[2]<-'mean'
 
 
 #Export to shapefile
-no2_mad_year |> sf::st_collection_extract(type="POLYGON")|>
- st_write('./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp')
+#no2_mad_year |> sf::st_collection_extract(type="POLYGON")|>
+ # st_write('./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp')
 
 # Save and show
 save(no2_mad_year, file = 'processed_data/no2_mad_year.rda')
@@ -384,10 +388,10 @@ most_polluted <- no2_mad_year[order(no2_mad_year$mean,decreasing = TRUE),][1:n,c
 (most_polluted$name)
 
 
+#most_polluted |> st_union() |> st_buffer(1) -> export
 #Write shapefile
-most_polluted |> st_union() |> st_buffer(1) -> export
-file_name <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
-st_write(export,file_name)
+#file_name <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
+#st_write(export,file_name)
 ```
 
 ```{r}
@@ -495,6 +499,7 @@ apply_mk <- function(cube,period){
 Plot general evolution of NO2
 ```{r}
 df <- data.frame(no2_neigh_week)
+#df <- aggregate(mean.NO2.concentration~week,df,mean)
 #jpg(filename="./exported_data/plot.jpg")
 plot(df$week,df$mean.NO2.concentration,main = 'NO2 Concentration',xlab = 'week',ylab='Concentration [μg/m^3]')
 #dev.off()
@@ -583,13 +588,13 @@ for (quarter in 1:4){
   q_results[[quarter]] <-  q_results[[quarter]] |> sf::st_collection_extract(type="POLYGON") 
 }
 
-# Export as shapefiles
-for (quarter in 1:4){
- file_name <- paste0("exported_data/shapefiles/trend_classification_q_",quarter,".shp")
-  sf::st_write(q_results[[quarter]],file_name)
-}
-```
 
+#for (quarter in 1:4){
+  #writing shps
+ # file_name <- paste0("exported_data/shapefiles/trend_classification_q_",quarter,".shp")
+  #sf::st_write(q_results[[quarter]],file_name)
+#}
+```
 
 # References
 
@@ -598,3 +603,4 @@ Borge, R., Lumbreras, J., Pérez, J., de la Paz, D., Vedrenne, M., de Andrés, J
 European Environment Agency. (2019). “Air quality in Europe—2019 report”. EEA Report No 10/2019.Retrieved on June 24 at <https://www.eea.europa.eu/publications/air-quality-in-europe-2019>
 
 Ortiz, C., Linares, C., Carmona, R., & Díaz, J. (2017). Evaluation of short-term mortality attributable to particulate matter pollution in Spain. Environmental pollution (Barking, Essex : 1987), 224, 541–551. <https://doi.org/10.1016/j.envpol.2017.02.037>
+
