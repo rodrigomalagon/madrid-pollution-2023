@@ -16,8 +16,3 @@ information for multiple pollutants across 2023.
 
 The main workflow of the project can be accessed at the
 `Processing-and-Analysis.md` file in this repository.
-
-As an addition to the main analysis, we leverage the processed data to
-implement an LSTM model for the time series data of NO2 of Madrid
-throughout year 2023. The workflow for this add-on to the project is
-available under the `LSTM Analysis.Rmd` file of the current repository.
