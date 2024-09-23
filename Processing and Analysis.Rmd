@@ -1,4 +1,6 @@
 ---
+title: "Processing and Analysis"
+author: "Rodrigo Malagón"
 output: github_document
 ---
 
