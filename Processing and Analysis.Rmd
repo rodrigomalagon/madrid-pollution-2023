@@ -4,13 +4,9 @@ author: "Rodrigo Malagón"
 output: github_document
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
@@ -101,7 +97,7 @@ year_data <- year_data[c('station_id','pollutant_id','month','day','hour','valid
 year_data$validation <- lapply(year_data$validation, function(x){x=='V'})|>unlist()
 
 # Save and show data
-head(year_data)
+#year_data
 ```
 
 We incorporate pollutants metadata with descriptive information.
@@ -123,9 +119,9 @@ pollutants$unit|>enc2utf8()-> pollutants$unit #Ensuring utf-8
 year_data <- merge(year_data,pollutants,by='pollutant_id')
 
 # Save and show
-save(year_data,file = './processed_data/year_data.rda')
-save(pollutants,file = './processed_data/pollutants.rda')
-year_data |> head()
+#save(year_data,file = './processed_data/year_data.rda')
+#save(pollutants,file = './processed_data/pollutants.rda')
+#year_data
 ```
 
 ### Dataset inspection
@@ -218,8 +214,8 @@ stations <- stations[c('station_id','station_name','long','lat')]
 #Set georeference
 stations_crs <- st_crs("WGS84" )
 stations <- st_as_sf(stations,coords=c('long','lat'),crs=stations_crs)
-save(stations,file = './processed_data/stations.rda')
-save(stations_crs,file='./processed_data/stations_crs.rda')
+#save(stations,file = './processed_data/stations.rda')
+#save(stations_crs,file='./processed_data/stations_crs.rda')
 stations
 ```
 
@@ -230,7 +226,7 @@ We then join the dataframes and inspect the size of the dataset (in MBs).
 no2_madrid <- merge(no2_madrid,stations,by='station_id')|>
   st_sf(crs = stations_crs)
 
-save(no2_madrid,file='./processed_data/no2_madrid.rda')
+#save(no2_madrid,file='./processed_data/no2_madrid.rda')
 
 #Inspection of NOx dataset size (with geometries)
 (object.size(no2_madrid)/10e6) |> 
@@ -249,7 +245,7 @@ file_path <- './rawdata/neighborhoods.json'
 read <- paste(readLines(file_path, warn=FALSE),collapse = "")
 neighborhoods_json <- fromJSON(read)
 neighborhoods_crs <- st_crs(neighborhoods_json$crs$properties$name)
-save(neighborhoods_crs,file = './processed_data/neighborhoods_crs.rda')
+#save(neighborhoods_crs,file = './processed_data/neighborhoods_crs.rda')
 
 # Extraction of sf linestring objects from json using helping function
 num_neighborhoods <- length(neighborhoods_json$features)
@@ -271,7 +267,7 @@ neighborhoods <- rename_columns(neighborhoods,c('NOMBRE','NOMDIS'),c('name','dis
 neighborhoods <- neighborhoods[c('FID','name','district')]
 
 # Save and show
-save(neighborhoods,file = './processed_data/neighborhoods.rda')
+#save(neighborhoods,file = './processed_data/neighborhoods.rda')
 neighborhoods
 ```
 
