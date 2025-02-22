@@ -15,5 +15,5 @@ The dataset is initially provided in a wide format and provides
 information for multiple pollutants across 2023.
 
 The main workflow of the project can be accessed at the
-[`Processing-and-Analysis.md`](%60%20Processing-and-Analysis.md) file in
-this repository.
+[`Processing-and-Analysis.md`](Processing-and-Analysis.md) file in this
+repository.
