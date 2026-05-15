@@ -403,8 +403,9 @@ colnames(no2_mad_year)[2]<-'mean'
 
 #Export to shapefile / GeoJSON
 mean_export <- no2_mad_year |> sf::st_collection_extract(type = "POLYGON")
+mean_export_wgs84 <- st_transform(mean_export, 4326)
 st_write(mean_export, "./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp", delete_layer = TRUE)
-st_write(mean_export, "./exported_data/geojson/madrid_mean_year_by_neighborhood.geojson", driver = "GeoJSON", delete_dsn = TRUE)
+st_write(mean_export_wgs84, "./exported_data/geojson/madrid_mean_year_by_neighborhood.geojson", driver = "GeoJSON", delete_dsn = TRUE)
 
 # Save and show
 save(no2_mad_year, file = 'processed_data/no2_mad_year.rda')
@@ -423,11 +424,12 @@ most_polluted <- no2_mad_year[order(no2_mad_year$mean,decreasing = TRUE),][1:n,c
 
 
 most_polluted |> st_union() |> st_buffer(1) -> export
+export_wgs84 <- st_transform(export, 4326)
 #Write shapefile / GeoJSON
 file_name_shp <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
 file_name_geojson <- paste0('./exported_data/geojson/',n,'_most_polluted.geojson')
 st_write(export, file_name_shp, delete_layer = TRUE)
-st_write(export, file_name_geojson, driver = 'GeoJSON', delete_dsn = TRUE)
+st_write(export_wgs84, file_name_geojson, driver = 'GeoJSON', delete_dsn = TRUE)
 ```
 
 ```{r}
@@ -643,8 +645,9 @@ for (quarter in 1:4){
 # writing shps / GeoJSON
 file_name_shp <- paste0("exported_data/shapefiles/trend_classification_q_", quarter, ".shp")
 file_name_geojson <- paste0("exported_data/geojson/trend_classification_q_", quarter, ".geojson")
+q_results_wgs84 <- st_transform(q_results[[quarter]], 4326)
 sf::st_write(q_results[[quarter]], file_name_shp, delete_layer = TRUE)
-sf::st_write(q_results[[quarter]], file_name_geojson, driver = "GeoJSON", delete_dsn = TRUE)
+sf::st_write(q_results_wgs84, file_name_geojson, driver = "GeoJSON", delete_dsn = TRUE)
 }
 ```
 
