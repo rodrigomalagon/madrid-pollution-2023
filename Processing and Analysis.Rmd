@@ -10,18 +10,41 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(widepollution)  # load custom package. Available at
-  # https://github.com/rodrigomalagon/widepollution or via
-  # install.packages("devtools")
-  # devtools::install_github("rodrigomalagon/widepollution")
-library(dplyr)  # used to arrange dataframe rows.
-library(tidyr) # used to pivot a dataframe to create a summary table
-library(sf)    # used for spatial analysis throughout the markdown
-library(units) # units of MB
-library(rjson) # read json in processing stage
-library(stars) # used for data cube analysis
-library(gstat) # used for interpolation
-library(zyp)   # used to perform time series analysis
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+required_cran <- c(
+  "dplyr",  # used to arrange dataframe rows
+  "tidyr",  # used to pivot a dataframe to create a summary table
+  "sf",     # used for spatial analysis throughout the markdown
+  "units",  # units of MB
+  "rjson",  # read json in processing stage
+  "stars",  # used for data cube analysis
+  "gstat",  # used for interpolation
+  "zyp"     # used to perform time series analysis
+)
+
+missing_cran <- required_cran[!vapply(required_cran, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing_cran) > 0) {
+  install.packages(missing_cran, dependencies = TRUE)
+}
+
+# load custom package from GitHub if it is not installed
+if (!requireNamespace("widepollution", quietly = TRUE)) {
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    install.packages("remotes")
+  }
+  remotes::install_github("rodrigomalagon/widepollution", dependencies = TRUE)
+}
+
+library(widepollution)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(units)
+library(rjson)
+library(stars)
+library(gstat)
+library(zyp)
 ```
 
 
