@@ -47,6 +47,17 @@ library(gstat)
 library(zyp)
 ```
 
+```{r}
+# Output structure check
+output_dirs <- c(
+  "./exported_data",
+  "./exported_data/shapefiles",
+  "./exported_data/geojson"
+)
+
+invisible(lapply(output_dirs, dir.create, recursive = TRUE, showWarnings = FALSE))
+```
+
 
 
 # Spatio-temporal monitoring of Madrid pollution in 2023 (Data processing)
@@ -120,7 +131,7 @@ year_data <- year_data[c('station_id','pollutant_id','month','day','hour','valid
 year_data$validation <- lapply(year_data$validation, function(x){x=='V'})|>unlist()
 
 # Save and show data
-#year_data
+year_data
 ```
 
 We incorporate pollutants metadata with descriptive information.
@@ -375,7 +386,7 @@ plot(no2_mad_year_stars,breaks='pretty')
 ```
 
 
-We reshape our year analysed data into a dataframe:
+We reshape our year analysed data into a dataframe and export it:
 
 
 ```{r}
@@ -390,9 +401,10 @@ no2_mad_year <- merge(no2_mad_year,
 colnames(no2_mad_year)[2]<-'mean'
 
 
-#Export to shapefile
-#no2_mad_year |> sf::st_collection_extract(type="POLYGON")|>
- # st_write('./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp')
+#Export to shapefile / GeoJSON
+mean_export <- no2_mad_year |> sf::st_collection_extract(type = "POLYGON")
+st_write(mean_export, "./exported_data/shapefiles/madrid_mean_year_by_neighborhood.shp", delete_layer = TRUE)
+st_write(mean_export, "./exported_data/geojson/madrid_mean_year_by_neighborhood.geojson", driver = "GeoJSON", delete_dsn = TRUE)
 
 # Save and show
 save(no2_mad_year, file = 'processed_data/no2_mad_year.rda')
@@ -401,7 +413,8 @@ plot(no2_mad_year['mean'])
 
 
 
-We could recover the neighborhoods names by the id, as the aggregation step was done following the order of the `neighborhoods` sf object. Then, we can obtain the 10 most polluted neighborhoods by name and plot them as well:
+We could recover the neighborhoods names by the id, as the aggregation step was done following the order of the `neighborhoods` sf object. 
+Then, we can obtain the n (=10, 25) most polluted neighborhoods by name and plot them as well:
 
 ```{r}
 n<-25
@@ -409,10 +422,12 @@ most_polluted <- no2_mad_year[order(no2_mad_year$mean,decreasing = TRUE),][1:n,c
 (most_polluted$name)
 
 
-#most_polluted |> st_union() |> st_buffer(1) -> export
-#Write shapefile
-#file_name <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
-#st_write(export,file_name)
+most_polluted |> st_union() |> st_buffer(1) -> export
+#Write shapefile / GeoJSON
+file_name_shp <- paste0('./exported_data/shapefiles/',n,'_most_polluted.shp')
+file_name_geojson <- paste0('./exported_data/geojson/',n,'_most_polluted.geojson')
+st_write(export, file_name_shp, delete_layer = TRUE)
+st_write(export, file_name_geojson, driver = 'GeoJSON', delete_dsn = TRUE)
 ```
 
 ```{r}
@@ -452,8 +467,6 @@ grid
 
 ```{r}
 #Perform interpolation per month and construct a stars data cube
-
-
 l <- list()
 
 for (week in 1:52){
@@ -520,10 +533,46 @@ apply_mk <- function(cube,period){
 Plot general evolution of NO2
 ```{r}
 df <- data.frame(no2_neigh_week)
-#df <- aggregate(mean.NO2.concentration~week,df,mean)
-#jpg(filename="./exported_data/plot.jpg")
-plot(df$week,df$mean.NO2.concentration,main = 'NO2 Concentration',xlab = 'week',ylab='Concentration [μg/m^3]')
-#dev.off()
+weekly_mean <- aggregate(mean.NO2.concentration ~ week, df, mean)
+
+above_limit <- weekly_mean$mean.NO2.concentration > 40
+point_colors <- ifelse(above_limit, "#c1121f", "#0f4c5c")
+
+par(mar = c(5, 5, 3, 1), bty = "l", las = 1)
+plot(
+  weekly_mean$week,
+  weekly_mean$mean.NO2.concentration,
+  type = "n",
+  axes = FALSE,
+  xlab = "Week",
+  ylab = expression(paste("Mean NO"[2], " concentration (", mu, "g/m"^3, ")")),
+  main = "General evolution of NO2 in 2023",
+  ylim = c(min(weekly_mean$mean.NO2.concentration, 40, na.rm = TRUE) - 2,
+           max(weekly_mean$mean.NO2.concentration, 40, na.rm = TRUE) + 2),
+  xlim = c(1, 52)
+)
+axis(1, at = seq(1, 52, by = 4))
+axis(2, las = 1)
+box(col = "#3d5a80")
+abline(h = 40, lty = 2, lwd = 1.5, col = "#c1121f")
+grid(nx = NA, ny = NULL, col = "#d9e2ec", lty = "dashed", lwd = 0.8)
+lines(weekly_mean$week, weekly_mean$mean.NO2.concentration, col = "#0f4c5c", lwd = 2.2)
+points(
+  weekly_mean$week,
+  weekly_mean$mean.NO2.concentration,
+  pch = 19,
+  cex = 0.9,
+  col = point_colors
+)
+legend(
+  "topright",
+  legend = c("<= 40 ", "> 40 "),
+  col = c("#0f4c5c", "#c1121f"),
+  pch = 19,
+  bty = "n",
+  xlab = "Week",
+  title = "1t"
+)
 ```
 
 Apply test on periods (quarters) and add neighborhood names
@@ -589,7 +638,7 @@ reclass <- function(tau,pval){
 ```
 
 
-Applying trend classification and creating shapefiles
+Applying trend classification and creating shapefiles / GeoJSON
 
 ```{r}
 for (quarter in 1:4){
@@ -610,11 +659,14 @@ for (quarter in 1:4){
 }
 
 
-#for (quarter in 1:4){
-  #writing shps
- # file_name <- paste0("exported_data/shapefiles/trend_classification_q_",quarter,".shp")
-  #sf::st_write(q_results[[quarter]],file_name)
-#}
+for (quarter in 1:4){
+  
+# writing shps / GeoJSON
+file_name_shp <- paste0("exported_data/shapefiles/trend_classification_q_", quarter, ".shp")
+file_name_geojson <- paste0("exported_data/geojson/trend_classification_q_", quarter, ".geojson")
+sf::st_write(q_results[[quarter]], file_name_shp, delete_layer = TRUE)
+sf::st_write(q_results[[quarter]], file_name_geojson, driver = "GeoJSON", delete_dsn = TRUE)
+}
 ```
 
 # References
