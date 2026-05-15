@@ -533,46 +533,25 @@ apply_mk <- function(cube,period){
 Plot general evolution of NO2
 ```{r}
 df <- data.frame(no2_neigh_week)
-weekly_mean <- aggregate(mean.NO2.concentration ~ week, df, mean)
-
-above_limit <- weekly_mean$mean.NO2.concentration > 40
-point_colors <- ifelse(above_limit, "#c1121f", "#0f4c5c")
 
 par(mar = c(5, 5, 3, 1), bty = "l", las = 1)
-plot(
-  weekly_mean$week,
-  weekly_mean$mean.NO2.concentration,
-  type = "n",
-  axes = FALSE,
+boxplot(
+  mean.NO2.concentration ~ week,
+  data = df,
+  col = "#d9e2ec",
+  border = "#3d5a80",
+  outline = TRUE,
+  notch = FALSE,
+  whisklty = 2,
+  medlwd = 2,
+  staplewex = 0.6,
+  boxwex = 0.7,
   xlab = "Week",
-  ylab = expression(paste("Mean NO"[2], " concentration (", mu, "g/m"^3, ")")),
-  main = "General evolution of NO2 in 2023",
-  ylim = c(min(weekly_mean$mean.NO2.concentration, 40, na.rm = TRUE) - 2,
-           max(weekly_mean$mean.NO2.concentration, 40, na.rm = TRUE) + 2),
-  xlim = c(1, 52)
+  ylab = expression(paste("Concentration (", mu, "g/m"^3, ")")),
+  main = "NO2 Concentration"
 )
-axis(1, at = seq(1, 52, by = 4))
-axis(2, las = 1)
-box(col = "#3d5a80")
 abline(h = 40, lty = 2, lwd = 1.5, col = "#c1121f")
-grid(nx = NA, ny = NULL, col = "#d9e2ec", lty = "dashed", lwd = 0.8)
-lines(weekly_mean$week, weekly_mean$mean.NO2.concentration, col = "#0f4c5c", lwd = 2.2)
-points(
-  weekly_mean$week,
-  weekly_mean$mean.NO2.concentration,
-  pch = 19,
-  cex = 0.9,
-  col = point_colors
-)
-legend(
-  "topright",
-  legend = c("<= 40 ", "> 40 "),
-  col = c("#0f4c5c", "#c1121f"),
-  pch = 19,
-  bty = "n",
-  xlab = "Week",
-  title = "1t"
-)
+grid(nx = NA, ny = NULL, col = "#edf2f7", lty = "dashed", lwd = 0.8)
 ```
 
 Apply test on periods (quarters) and add neighborhood names
