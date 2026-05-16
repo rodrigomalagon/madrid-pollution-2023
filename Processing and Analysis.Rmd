@@ -727,7 +727,7 @@ Applying trend classification and creating shapefiles / GeoJSON
 for (quarter in 1:4){
   df <- q_results[[quarter]]
   df$classification <- rep(NA,nrow(df))
-  for(row in 1:nrow(df)){
+  for (row in seq_len(nrow(df))) {
     df[row,]$classification <- reclass(df[row,]$tau,df[row,]$two_sided_pval)
   }
   q_results[[quarter]] <- df
