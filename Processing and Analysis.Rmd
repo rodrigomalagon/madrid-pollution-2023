@@ -429,68 +429,71 @@ save(no2_mad_year, file = 'processed_data/no2_mad_year.rda')
 # Prepare a WGS84 layer for cartographic png display with OSM basemap
 map_data <- st_transform(mean_export, 4326)
 bbox <- st_bbox(map_data)
-pad_x <- (bbox$xmax - bbox$xmin) * 0.06
-pad_y <- (bbox$ymax - bbox$ymin) * 0.06
+
 
 p_mean_map <- ggplot() +
-  ggspatial::annotation_map_tile(type = "osm", zoomin = 0, progress = "none") +
+  ggspatial::annotation_map_tile(type = "osm", zoomin=0, progress = "none") +
   geom_sf(
     data = map_data,
     aes(fill = mean),
-    color = "#f4f4f4",
-    linewidth = 0.22,
-    alpha = 0.78
+    color = "#f2f2f2",
+    linewidth = 0.2,
+    alpha = 0.76
   ) +
   scale_fill_viridis_c(
     option = "C",
     direction = 1,
-    name = expression("Annual mean NO"[2] * " (" * mu * "g/m"^3 * ")"),
+    name = expression("NO"[2] * " annual mean (" * mu * "g/m"^3 * ")"),
     guide = guide_colorbar(
       title.position = "top",
-      barheight = grid::unit(7, "cm"),
+      barheight = grid::unit(2.2, "cm"),
+      barwidth = grid::unit(0.35, "cm"),
       frame.colour = "#3a3a3a",
       ticks.colour = "#3a3a3a"
     )
   ) +
   ggspatial::annotation_scale(
     location = "bl",
-    width_hint = 0.28,
-    text_cex = 0.7,
+    width_hint = 0.2,
+    text_cex = 0.62,
     line_col = "#2b2b2b"
   ) +
   ggspatial::annotation_north_arrow(
-    location = "br",
+    location = "tr",
     which_north = "true",
     style = ggspatial::north_arrow_orienteering,
-    height = grid::unit(1.0, "cm"),
-    width = grid::unit(1.0, "cm")
+    height = grid::unit(0.72, "cm"),
+    width = grid::unit(0.72, "cm")
+  ) +
+  annotate(
+    "text",
+    x = bbox$xmin + (bbox$xmax - bbox$xmin) * 0.012,
+    y = bbox$ymin + (bbox$ymax - bbox$ymin) * 0.018,
+    label = "(c) OpenStreetMap contributors",
+    hjust = 0,
+    vjust = 0,
+    size = 2.4,
+    colour = "#2f2f2f"
   ) +
   coord_sf(
     crs = st_crs(4326),
     default_crs = st_crs(4326),
-    xlim = c(bbox$xmin - pad_x, bbox$xmax + pad_x),
-    ylim = c(bbox$ymin - pad_y, bbox$ymax + pad_y),
-    expand = FALSE
+    xlim = c(bbox$xmin, bbox$xmax),
+    ylim = c(bbox$ymin, bbox$ymax),
+    expand = FALSE,
+    clip = "on"
   ) +
-  labs(
-    title = "Madrid 2023 mean NO2 by neighborhood",
-    subtitle = "Annual neighborhood average concentrations",
-    caption = "Basemap: \u00a9 OpenStreetMap contributors"
-  ) +
-  theme_minimal(base_size = 11) +
+  theme_void(base_size = 10) +
   theme(
-    plot.title = element_text(face = "bold", size = 14),
-    plot.subtitle = element_text(size = 10, margin = margin(b = 8)),
-    plot.caption = element_text(size = 8, color = "#4f4f4f", hjust = 1),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.title = element_blank(),
-    axis.text = element_text(size = 8, color = "#4a4a4a"),
-    legend.position = "right",
-    legend.title = element_text(face = "bold", size = 9),
-    legend.text = element_text(size = 8),
+    plot.margin = margin(0, 0, 0, 0),
+    panel.spacing = grid::unit(0, "pt"),
+    legend.position = c(0.03, 0.23),
+    legend.justification = c(0, 0),
+    legend.title = element_text(face = "bold", size = 7.5),
+    legend.text = element_text(size = 7),
     legend.background = element_rect(fill = scales::alpha("white", 0.75), color = "#d9d9d9"),
-    legend.key.height = grid::unit(0.9, "cm")
+    legend.key.height = grid::unit(0.55, "cm"),
+    legend.margin = margin(4, 4, 4, 4)
   )
 
 print(p_mean_map)
@@ -499,11 +502,11 @@ print(p_mean_map)
 ggsave(
   filename = "./exported_data/figures/madrid_mean_year_by_neighborhood_osm.png",
   plot = p_mean_map,
-  width = 10,
-  height = 8,
+  width = 12,
+  height = 6.75,
   units = "in",
   dpi = 320,
-  bg = "white"
+  bg = "transparent"
 )
 ```
 
