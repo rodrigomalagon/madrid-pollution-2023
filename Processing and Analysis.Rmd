@@ -6,10 +6,12 @@ output: github_document
 
 
 ```{r setup, include=FALSE}
+# Configure global knitr chunk options for document execution.
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+# Install/load required packages and project dependency helpers.
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 
 required_cran <- c(
@@ -20,7 +22,10 @@ required_cran <- c(
   "rjson",  # read json in processing stage
   "stars",  # used for data cube analysis
   "gstat",  # used for interpolation
-  "zyp"     # used to perform time series analysis
+  "zyp",    # used to perform time series analysis
+  "ggplot2",# used for enhanced cartographic plotting
+  "ggspatial", # used to add OSM basemap tiles and map annotations
+  "rosm"    # tile backend used by ggspatial
 )
 
 missing_cran <- required_cran[!vapply(required_cran, requireNamespace, logical(1), quietly = TRUE)]
@@ -45,6 +50,8 @@ library(rjson)
 library(stars)
 library(gstat)
 library(zyp)
+library(ggplot2)
+library(ggspatial)
 ```
 
 ```{r}
@@ -52,7 +59,8 @@ library(zyp)
 output_dirs <- c(
   "./exported_data",
   "./exported_data/shapefiles",
-  "./exported_data/geojson"
+  "./exported_data/geojson",
+  "./exported_data/figures"
 )
 
 invisible(lapply(output_dirs, dir.create, recursive = TRUE, showWarnings = FALSE))
@@ -82,6 +90,7 @@ In this section we process our main datasets from [Madrid Open Data portal](http
 
 We begin with a custom arrangement of our data files:
 ```{r}
+# List monthly raw files and order them chronologically by month abbreviation.
 data_path <- "./rawdata/Year2023/"
 file_paths <- list.files(data_path, full.names = TRUE, pattern = "*.csv")
 
@@ -100,6 +109,7 @@ files <- arrange(files,factor(files$month,levels = months_order))
 We iterate data extraction and an unpivot process through all the monthly files. Then we construct a single long-format dataframe. We perform processing to ensure appropriate data types and set a useful dataframe structure for further analyses.
 
 ```{r}
+# Build the long-format yearly pollution table from monthly wide-format files.
 monthly_data <- list()
 
 # Extraction and unpivot
@@ -163,6 +173,7 @@ year_data <- merge(year_data,pollutants,by='pollutant_id')
 We can now get a glance of the proportion of "verified" samples from the dataset, following the metadata description available on the portal:
 
 ```{r}
+# Compute the percentage of validated measurements in the yearly dataset.
 verified <- sum(year_data$validation)
 total <- dim(year_data)[1]
 paste0(round(verified/total * 100,2),' %')
@@ -171,6 +182,7 @@ paste0(round(verified/total * 100,2),' %')
 We verify that no `NULL` values are provided in the dataset:
 
 ```{r}
+# Check whether any NULL pollution measurements are present.
 paste0('Number of NULL measures found: ',
        sum(unlist(lapply(year_data$measure,is.null))))
 ```
@@ -178,6 +190,7 @@ paste0('Number of NULL measures found: ',
 We now inspect the proportion of data by type of pollutant and compare it with the desired number of data measurements, namely `number of stations`$\times\ 365$ `days of the year` $\times\ 24$ `hours of the day`.
 
 ```{r}
+# Summarize pollutant completeness against expected station-day-hour coverage.
 pollutant_summary <- aggregate(measure~pollutant_name,data= year_data,length)|>
   rename_columns('measure','num_of_measures')
 pollutant_summary <- pollutant_summary[order(pollutant_summary$num_of_measures,decreasing=TRUE),]
@@ -317,6 +330,7 @@ plot(stations$geometry,lwd=2,col='orange',add=TRUE)
 Moreover, we make sure that the most persistently missing data (in stations with `station_id` 11 and 35, shown in the `Dataset inspection` section) is enclosed by nearby sensors:
 
 ```{r}
+# Plot neighborhoods, highlighting stations with persistent missing data.
 par(mar = c(2,2,0.5,0.5), mgp = c(0, 1, 0))
 plot(neighborhoods$geometry,graticule=TRUE,col_graticule='gray',lwd = 0.1,col='lightblue',axes=TRUE,border=0)
 plot(stations$geometry,add=TRUE)
@@ -409,7 +423,88 @@ st_write(mean_export_wgs84, "./exported_data/geojson/madrid_mean_year_by_neighbo
 
 # Save and show
 save(no2_mad_year, file = 'processed_data/no2_mad_year.rda')
-plot(no2_mad_year['mean'])
+```
+
+```{r}
+# Prepare a WGS84 layer for cartographic png display with OSM basemap
+map_data <- st_transform(mean_export, 4326)
+bbox <- st_bbox(map_data)
+pad_x <- (bbox$xmax - bbox$xmin) * 0.06
+pad_y <- (bbox$ymax - bbox$ymin) * 0.06
+
+p_mean_map <- ggplot() +
+  ggspatial::annotation_map_tile(type = "osm", zoomin = 0, progress = "none") +
+  geom_sf(
+    data = map_data,
+    aes(fill = mean),
+    color = "#f4f4f4",
+    linewidth = 0.22,
+    alpha = 0.78
+  ) +
+  scale_fill_viridis_c(
+    option = "C",
+    direction = 1,
+    name = expression("Annual mean NO"[2] * " (" * mu * "g/m"^3 * ")"),
+    guide = guide_colorbar(
+      title.position = "top",
+      barheight = grid::unit(7, "cm"),
+      frame.colour = "#3a3a3a",
+      ticks.colour = "#3a3a3a"
+    )
+  ) +
+  ggspatial::annotation_scale(
+    location = "bl",
+    width_hint = 0.28,
+    text_cex = 0.7,
+    line_col = "#2b2b2b"
+  ) +
+  ggspatial::annotation_north_arrow(
+    location = "br",
+    which_north = "true",
+    style = ggspatial::north_arrow_orienteering,
+    height = grid::unit(1.0, "cm"),
+    width = grid::unit(1.0, "cm")
+  ) +
+  coord_sf(
+    crs = st_crs(4326),
+    default_crs = st_crs(4326),
+    xlim = c(bbox$xmin - pad_x, bbox$xmax + pad_x),
+    ylim = c(bbox$ymin - pad_y, bbox$ymax + pad_y),
+    expand = FALSE
+  ) +
+  labs(
+    title = "Madrid 2023 mean NO2 by neighborhood",
+    subtitle = "Annual neighborhood average concentrations",
+    caption = "Basemap: \u00a9 OpenStreetMap contributors"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(size = 10, margin = margin(b = 8)),
+    plot.caption = element_text(size = 8, color = "#4f4f4f", hjust = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title = element_blank(),
+    axis.text = element_text(size = 8, color = "#4a4a4a"),
+    legend.position = "right",
+    legend.title = element_text(face = "bold", size = 9),
+    legend.text = element_text(size = 8),
+    legend.background = element_rect(fill = scales::alpha("white", 0.75), color = "#d9d9d9"),
+    legend.key.height = grid::unit(0.9, "cm")
+  )
+
+print(p_mean_map)
+
+# Direct export as PNG (independent of R Markdown knitting output)
+ggsave(
+  filename = "./exported_data/figures/madrid_mean_year_by_neighborhood_osm.png",
+  plot = p_mean_map,
+  width = 10,
+  height = 8,
+  units = "in",
+  dpi = 320,
+  bg = "white"
+)
 ```
 
 
@@ -418,6 +513,7 @@ We could recover the neighborhoods names by the id, as the aggregation step was 
 Then, we can obtain the n (=10, 25) most polluted neighborhoods by name and plot them as well:
 
 ```{r}
+# Extract and export the top-N most polluted neighborhoods by annual mean NO2.
 n<-25
 most_polluted <- no2_mad_year[order(no2_mad_year$mean,decreasing = TRUE),][1:n,c('name','mean')]
 (most_polluted$name)
@@ -486,6 +582,7 @@ save(no2_mad_week_cube,file='./processed_data/no2_mad_week_cube.rda')
 Neighborhood aggregation
 
 ```{r}
+# Aggregate weekly NO2 datacube values to neighborhood-level weekly means.
 aggregator <- st_transform(neighborhoods$geometry,crs=neighborhoods_crs)
 no2_neigh_week <- aggregate(no2_mad_week_cube,aggregator,mean)
 names(no2_neigh_week) <- 'mean NO2 concentration'
@@ -534,6 +631,7 @@ apply_mk <- function(cube,period){
 
 Plot general evolution of NO2
 ```{r}
+# Visualize weekly neighborhood NO2 distributions and EU threshold reference.
 df <- data.frame(no2_neigh_week)
 
 par(mar = c(5, 5, 3, 1), bty = "l", las = 1)
@@ -558,6 +656,7 @@ grid(nx = NA, ny = NULL, col = "#edf2f7", lty = "dashed", lwd = 0.8)
 
 Apply test on periods (quarters) and add neighborhood names
 ```{r}
+# Run Mann-Kendall by quarter and attach neighborhood names to each result.
 q_results <- list()
 q <- list(q1=1:26,q2=14:26,q3=27:39,q4=40:52)
 
@@ -572,6 +671,7 @@ q_results[[2]]
 
 Ploting for inspection
 ```{r}
+# Inspect trend and p-value maps for a selected quarter.
 quarter <- 4
 
 par(mfrow = c(1,2))
@@ -583,6 +683,7 @@ plot(q_results[[quarter]][c('two_sided_pval','geometry')],main = 'two-sided pval
 Reclassification according to p values
 
 ```{r}
+# Define helper rules to classify trend direction and significance levels.
 
 reclass_tau <- function(tau){
   if(tau>0){
@@ -622,6 +723,7 @@ reclass <- function(tau,pval){
 Applying trend classification and creating shapefiles / GeoJSON
 
 ```{r}
+# Apply trend classes to all quarters and export classified layers.
 for (quarter in 1:4){
   df <- q_results[[quarter]]
   df$classification <- rep(NA,nrow(df))
